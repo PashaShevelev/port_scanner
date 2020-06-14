@@ -4,7 +4,7 @@ import sys
 
 async def port_is_open(port, _ip='localhost'):
     try:
-        reader, writer = await asyncio.co(_ip, port)
+        reader, writer = asyncio.open_connection(_ip, port)
         print(f'Port {port} is open')
         writer.close()
     except Exception:
