@@ -1,34 +1,54 @@
-import asyncio
-import sys
+import socket
+from concurrent import futures
+from get_args import pars_arg
+from functools import partial
 
 
-async def port_is_open(port, _ip='localhost'):
+def port_is_open(port, state):
+    """Анализировать будем только на локальной машине, по понятным причинам"""
+    sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    con_tcp, con_udp = sock_tcp.connect_ex(('localhost', port)), sock_udp.connect_ex(('localhost', port))
+
     try:
-        reader, writer = asyncio.open_connection(_ip, port)
-        print(f'Port {port} is open')
-        writer.close()
+        if not con_tcp and state[0]:
+            print(f"TCP {port} {socket.getservbyport(port)}")
+        if not con_udp and state[1]:
+            print(f"UDP {port} {socket.getservbyport(port)}")
     except Exception:
-        print(f'Port {port} is close')
+        if not con_tcp and state[0]:
+            print(f"TCP {port}")
+        if not con_udp and state[1]:
+            print(f"UDP {port}")
+    finally:
+        sock_tcp.close()
+        sock_udp.close()
 
 
-def port_scanner(left, right):
-    try:
-        loop = asyncio.get_event_loop()
-        tasks = [loop.create_task(port_is_open(border_port)) for border_port in range(left, right)]
-        loop.run_until_complete(asyncio.wait(tasks))
-        loop.close()
-    except Exception as ex:
-        sys.exit(f"An error has occurred: {ex}")
+def port_scanner(left, right, state):
+    for port in range(left, right):
+        port_is_open(port, state)
 
 
 def main():
-    lo, hi = 0, 65_535
-    left, right = tuple(map(int, sys.argv[1:]))
+    data = pars_arg()
+    state = data[:2]
+    left, right = data[2]
+    lo, hi = 0, 65_355
     if lo <= left and right <= hi:
-        port_scanner(left, right)
+        if left - right > 100:
+            with futures.ThreadPoolExecutor(max_workers=4) as executor:
+                spawn = partial(executor.submit, port_scanner)
+                fs = [spawn(bord_l, bord_l + 100, state) for bord_l in range(left, right + 1, 100)]
+                for i in futures.as_completed(fs):
+                    i.result()
+        else:
+            port_scanner(left, right + 1, state)
     else:
         print(f'Range [{left}, {right}] is incorrect.')
 
 
 if __name__ == '__main__':
     main()
+
+
