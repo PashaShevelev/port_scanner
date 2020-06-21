@@ -15,7 +15,7 @@ def port_is_open(port, state):
             print(f"TCP {port} {socket.getservbyport(port)}")
         if not con_udp and state[1]:
             print(f"UDP {port} {socket.getservbyport(port)}")
-    except Exception:
+    except OSError:
         if not con_tcp and state[0]:
             print(f"TCP {port}")
         if not con_udp and state[1]:
