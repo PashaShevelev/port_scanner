@@ -24,23 +24,6 @@ def port_is_open(port, ip, state):
         sock_udp.close()
 
 
-def get_protocol(data):
-    if data == 'domain':
-        return 'DNS'
-    elif data == 'http':
-        return 'HTTP'
-    elif data == 'pop3':
-        return 'POP3'
-    elif data == 'ntp':
-        return 'NTP'
-    elif data == 'imap':
-        return 'IMAP'
-    elif data == 'smtp':
-        return 'SMTP'
-    else:
-        return ''
-
-
 def port_scanner(left, right, ip, state):
     for port in range(left, right):
         port_is_open(port, ip, state)
