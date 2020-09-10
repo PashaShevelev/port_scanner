@@ -24,22 +24,23 @@ def port_is_open(port, ip, state):
         sock_udp.close()
 
 
-def port_scanner(left, right, ip, state):
+def port_scanner(left, right, ip, *state):
     for port in range(left, right):
         port_is_open(port, ip, state)
 
 
 def main():
-    data = pars_arg()
-    ip = data[0]
-    state = data[1:3]
-    left, right = data[3]
+    args = pars_arg()
+    ip = args[0]
+    state_tcp, state_udp = args[1:3]
+    left, right = args[3]
+    border_workers = args[4]
     lo, hi = 0, 65_355
     if lo <= left and right <= hi:
         if left - right > 100:
-            with futures.ThreadPoolExecutor(max_workers=4) as executor:
+            with futures.ThreadPoolExecutor(max_workers=border_workers) as executor:
                 spawn = partial(executor.submit, port_scanner)
-                fs = [spawn(bord_l, bord_l + 100, ip, state) for bord_l in range(left, right + 1, 100)]
+                fs = [spawn(bord_l, bord_l + 100, ip, state_tcp, state_udp) for bord_l in range(left, right + 1, 100)]
                 for i in futures.as_completed(fs):
                     i.result()
         else:
